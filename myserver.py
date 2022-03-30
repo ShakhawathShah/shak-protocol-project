@@ -4,7 +4,6 @@ from ex2utils import Server
 
 class myserver(Server):
 
-
 	def onStart(self):
 		# Initialise server variables 
 		myserver.count = 0
@@ -48,7 +47,7 @@ class myserver(Server):
 				parameter = f"\n{socket.name}: {parameter}"
 				message=parameter.encode()
 				for s in myserver.users.values():
-					if s != socket:
+					if s != socket and s.hidden == False:
 						s.send(message)
 		elif(command == "MESSAGE"):
 			print('Command is ', command)
@@ -60,7 +59,7 @@ class myserver(Server):
 				if (user == socket.name):
 					myserver.send(self, "You cannot send a message to yourself", socket)
 				else:
-					if(user in myserver.users.keys()):
+					if(user in myserver.users.keys() and (myserver.users.get(user)).hidden == False):
 						print('SENDING MESSAGE TO: ', user)
 						print ('MESSAGE IS: ',message)
 						user_socket = myserver.users.get(user)
@@ -68,16 +67,37 @@ class myserver(Server):
 						message = message.encode()
 						user_socket.send(message)
 					else:
-						myserver.send(self, "User does not active, please try again or use <SEEALL> to see active users", socket)
+						myserver.send(self, "User is not active, please try again or use <SEEALL> to see active users", socket)
 		elif(command == "ALLUSERS"):
 			print('Command is ', command)
 			print("DISPLAYING ALL USERS")
 			myserver.send(self, "All Active Users:", socket)
 			for name in myserver.users.keys():
-				if name == socket.name:
+				if name == socket.name and (myserver.users.get(name)).hidden == False:
 					name = f"{name} (ME)"
 				name=name.encode()
 				socket.send(name)
+
+		elif(command == "CHECK"):
+			print('Command is ', command)
+			if(parameter.strip() == ""):
+				myserver.send(self, "Blank name entered, please enter valid user", socket)
+			else:
+				if (parameter == socket.name):
+					myserver.send(self, "You are an active user", socket)
+				else:
+					if(parameter in myserver.users.keys() and (myserver.users.get(parameter)).hidden == False):
+						myserver.send(self, f"{parameter} is an active user", socket)
+					else:
+						myserver.send(self, f"{parameter} is not currently an active user", socket)
+
+		elif(command == "HIDE"):
+			print('Command is ', command)
+			if(socket.hidden == False):
+				socket.hidden = True
+			else:
+				socket.hidden = False
+		
 		else:
 			myserver.send(self, "No command found, please type HELPLIST for list of commands OR HELP for more information on commands", socket)
 	
@@ -85,8 +105,8 @@ class myserver(Server):
 		return True
 
 	def onConnect(self, socket):
-		# setattr(socket, "name", "")
 		socket.name = ""
+		socket.hidden = False
 		# convert the string to an upper case version
 		myserver.send(self, "Connected, please register your name\nEnter '<REGISTER>' '<username>' ", socket)
 		myserver.count += 1

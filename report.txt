@@ -51,16 +51,16 @@ function onStart():
     SET users = {}
     OUTPUT "Server started"
 
-function onMessage(socket)
+function onMessage(socket, message)
 
     # Split input to get command and parameter
     command, parameter = message.split()
 
-    # For register add new user name to user list
-    # Name is stored with socket
+    # Call register function
     IF command == "REGISTER"
+        VALIDATE user not registered yet
         name = parameter
-        userlist[name] = socket
+        CALL onRegister(name)
 
     # Help and quit commands are available to users before registering
     ELIF command == "HELP"
@@ -75,7 +75,7 @@ function onMessage(socket)
 
     # User should register before using certain commands 
     # Messaging specific or all users needs registering
-    IF command != "REGISTER" AND name == NULL
+    IF (command != "REGISTER" OR "HELP" OR "HELPLIST" OR "QUIT") AND name == NULL
         OUTPUT "Please register first!!"
     
     ELIF command == "MESSAGEALL"
@@ -91,6 +91,12 @@ function onMessage(socket)
         for user in userlist 
             OUTPUT user.name
 
+    ELIF command == "CHECK"
+        IF user in userlist 
+            OUTPUT "User is active"  
+        ELSE
+            OUTPUT "User is not active"
+
     ELSE
         OUTPUT "invalid command, try HELP"
 
@@ -105,3 +111,10 @@ function onDisconnect()
     DECREMENT userCount
     OUTPUT "Disconnected"
     OUTPUT userCount
+
+# For register add new user name to user list
+# Name is stored with socket
+function onRegister(name)
+    VALIDATE name is one word
+    VALIDATE name does not already exist
+    userlist[name] = socket
