@@ -20,24 +20,27 @@ class myserver(Server):
 			print("MESSAGING ALL USERS")
 
 			if(parameter.strip() == ""):
+				print("INVALID COMMAND")
 				myserver.send(self, "Blank message entered, please enter valid message", socket)
 			else:
 				parameter = f"\n{socket.name}: {parameter}"
 				message=parameter.encode()
 				for s in myserver.users.values():
-					if s != socket and s.hidden == False:
+					if s != socket:
 						s.send(message)
 		elif(command == "MESSAGE" and socket.registered == True):
 			print('Command is ', command)
 			print ('Parameter is ',parameter)
 			(user, sep, message) = parameter.strip().partition(' ')
 			if(message.strip() == ""):
+				print("INVALID COMMAND")
 				myserver.send(self, "Blank message entered, please enter valid message", socket)
 			else:
 				if (user == socket.name):
+					print("INVALID COMMAND")
 					myserver.send(self, "You cannot send a message to yourself", socket)
 				else:
-					if(user in myserver.users.keys() and (myserver.users.get(user)).hidden == False):
+					if(user in myserver.users.keys()):
 						print('SENDING MESSAGE TO: ', user)
 						print ('MESSAGE IS: ',message)
 						user_socket = myserver.users.get(user)
@@ -59,6 +62,7 @@ class myserver(Server):
 		elif(command == "CHECK" and socket.registered == True):
 			print('Command is ', command)
 			if(parameter.strip() == ""):
+				print("INVALID COMMAND")
 				myserver.send(self, "Blank name entered, please enter valid user", socket)
 			else:
 				if (parameter == socket.name):
@@ -79,7 +83,14 @@ class myserver(Server):
 		elif(command == "REGISTER"):
 			print('Command is ', command)
 			print ('Parameter is ',parameter)
-			myserver.onRegister(self, socket, parameter)
+			if(parameter.strip() == ""):
+				print("INVALID COMMAND")
+				myserver.send(self, "Blank name entered, please enter valid name", socket)
+			elif(len(parameter) > 10):
+				print("INVALID COMMAND")
+				myserver.send(self, "Name entered is too long, please enter valid name < 10 characters", socket)
+			else:
+				myserver.onRegister(self, socket, parameter)
 		elif(command == "HELP"):
 			print('Command is ', command)
 			myserver.send(self, "Command Details:"
@@ -124,7 +135,7 @@ class myserver(Server):
 		# convert the string to an upper case version
 		myserver.send(self, "Connected, please register your name\nEnter '<REGISTER>' '<username>' ", socket)
 		myserver.count += 1
-		print(f"Number of connections: {myserver.count}")
+		print(f"Number of Clients: {myserver.count}")
 		# Signify all is well
 		return True
 
@@ -134,7 +145,7 @@ class myserver(Server):
 		socket.close()
 		print("User Disconnected")
 		myserver.count-=1
-		print(f"Number of connections: {myserver.count}")
+		print(f"Number of Clients: {myserver.count}")
 		return True
 
 	def onStop(self):
@@ -143,17 +154,16 @@ class myserver(Server):
 		myserver.users = {}
 		print("Server has Stopped")
 
-
 	def onRegister(self, socket, name):
 		# validate user name to one word only 
 		if (" " in name ):
 			myserver.send(self, "Name can only be one word please try again", socket)
 		elif(socket in myserver.users.values()):
 			myserver.send(self, "You are already registered", socket)
-		elif(name in myserver.users.keys()):
+		elif(name.upper() in myserver.users.keys()):
 			myserver.send(self, "User already exists with given name\nPlease enter another name", socket)
-		elif(name not in myserver.users.keys() and socket not in myserver.users.values()):
-			myserver.users.update({name: socket})
+		elif(name.upper() not in myserver.users.keys() and socket not in myserver.users.values()):
+			myserver.users.update({name.upper(): socket})
 			socket.name = name
 			print("NEW USER", name)
 			myserver.send(self, f"Registered sucessfully, Welcome {name}!!", socket)
