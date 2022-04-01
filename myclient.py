@@ -34,10 +34,8 @@ client.start(ip, port)
 
 while(True):
     try:
-        # signal.alarm(timeout)
         message = input()
-        # continue
-        if(message == "QUIT"):
+        if(message.strip() == "QUIT"):
             client.send(message.encode())
             break
         client.send(message.encode())

@@ -13,30 +13,8 @@ class myserver(Server):
 	def onMessage(self, socket, message):
 
 		(command, sep, parameter) = message.strip().partition(' ')
-
-		if(command == "REGISTER"):
-			print('Command is ', command)
-			print ('Parameter is ',parameter)
-			myserver.onRegister(self, socket, parameter)
-		elif(command == "HELP"):
-			print('Command is ', command)
-			myserver.send(self, "Command Details:"
-						+"\n'REGISTER'   -> Register new user" 
-						+"\n'MESSAGEALL' -> Send message to all active users on system"
-						+"\n'MESSAGE'    -> Send direct message to specified user"
-						+"\n'ALLUSERS'   -> Displays list of all active users"
-						+"\n'HELPLIST'   -> Displays list of all commands and how to use them"
-						+"\n'HELP'       -> Information about commands"
-						, socket)
-		elif(command == "HELPLIST"):
-			print('Command is ', command)
-			myserver.send(self, "List of commands:\n'<REGISTER>'   '<username>'\n'<MESSAGEALL>' '<message>'\n'<MESSAGE>'    '<username>' '<message>'\n'<ALLUSERS>'\n'<HELPLIST>'", socket)
-		elif(command == "QUIT"):
-			print('Command is ', command)
-			# myserver.onDisconnect(self, socket)
-		elif((command != "REGISTER" or command != "HELP" or command != "HELPLIST" or command != "QUIT") and socket.name == ""):
-			myserver.send(self, "Please register before using messaging commands", socket)
-		elif(command == "MESSAGEALL"):
+		
+		if(command == "MESSAGEALL" and socket.registered == True):
 			print('Command is ', command)
 			print ('Parameter is ',parameter)
 			print("MESSAGING ALL USERS")
@@ -49,7 +27,7 @@ class myserver(Server):
 				for s in myserver.users.values():
 					if s != socket and s.hidden == False:
 						s.send(message)
-		elif(command == "MESSAGE"):
+		elif(command == "MESSAGE" and socket.registered == True):
 			print('Command is ', command)
 			print ('Parameter is ',parameter)
 			(user, sep, message) = parameter.strip().partition(' ')
@@ -68,7 +46,7 @@ class myserver(Server):
 						user_socket.send(message)
 					else:
 						myserver.send(self, "User is not active, please try again or use <SEEALL> to see active users", socket)
-		elif(command == "ALLUSERS"):
+		elif(command == "ALLUSERS" and socket.registered == True):
 			print('Command is ', command)
 			print("DISPLAYING ALL USERS")
 			myserver.send(self, "All Active Users:", socket)
@@ -78,7 +56,7 @@ class myserver(Server):
 				name=name.encode()
 				socket.send(name)
 
-		elif(command == "CHECK"):
+		elif(command == "CHECK" and socket.registered == True):
 			print('Command is ', command)
 			if(parameter.strip() == ""):
 				myserver.send(self, "Blank name entered, please enter valid user", socket)
@@ -91,13 +69,48 @@ class myserver(Server):
 					else:
 						myserver.send(self, f"{parameter} is not currently an active user", socket)
 
-		elif(command == "HIDE"):
+		elif(command == "HIDE" and socket.registered == True):
 			print('Command is ', command)
 			if(socket.hidden == False):
 				socket.hidden = True
 			else:
 				socket.hidden = False
-		
+
+		elif(command == "REGISTER"):
+			print('Command is ', command)
+			print ('Parameter is ',parameter)
+			myserver.onRegister(self, socket, parameter)
+		elif(command == "HELP"):
+			print('Command is ', command)
+			myserver.send(self, "Command Details:"
+						+"\n'REGISTER'   -> Register new user" 
+						+"\n'MESSAGEALL' -> Send message to all active users on system"
+						+"\n'MESSAGE'    -> Send direct message to specified user"
+						+"\n'ALLUSERS'   -> Displays list of all active users"
+						+"\n'CHECK'      -> Checks to see if a specific user is active"
+						+"\n'HIDE'       -> Allows user to hide so they dont show as active on system, but can still receive messages, use hide again to unhide"
+						+"\n'HELPLIST'   -> Displays list of all commands and how to use them"
+						+"\n'HELP'       -> Information about commands"
+						+"\n'QUIT'       -> Allows the user to quit and exit the program", socket)
+		elif(command == "HELPLIST"):
+			print('Command is ', command)
+			myserver.send(self, "List of commands:"
+						+"\n'<REGISTER>'   '<username>'"
+						+"\n'<MESSAGEALL>' '<message>'"
+						+"\n'<MESSAGE>'    '<username>' '<message>'"
+						+"\n'<ALLUSERS>'"
+						+"\n'<CHECK>'      '<username>'"
+						+"\n'<HIDE>'"
+						+"\n'<HELPLIST>'"
+						+"\n'<HELP>'"
+						+"\n'<QUIT>'", socket)
+		elif(command == "QUIT"):
+			print('Command is ', command)
+			return False
+			# myserver.onDisconnect(self, socket)
+		elif((command != "REGISTER" or command != "HELP" or command != "HELPLIST" or command != "QUIT") and socket.name == ""):
+			myserver.send(self, "Please register before using messaging commands", socket)
+
 		else:
 			myserver.send(self, "No command found, please type HELPLIST for list of commands OR HELP for more information on commands", socket)
 	
@@ -107,6 +120,7 @@ class myserver(Server):
 	def onConnect(self, socket):
 		socket.name = ""
 		socket.hidden = False
+		socket.registered = False
 		# convert the string to an upper case version
 		myserver.send(self, "Connected, please register your name\nEnter '<REGISTER>' '<username>' ", socket)
 		myserver.count += 1
@@ -121,7 +135,14 @@ class myserver(Server):
 		print("User Disconnected")
 		myserver.count-=1
 		print(f"Number of connections: {myserver.count}")
-		return False
+		return True
+
+	def onStop(self):
+		# Reset server variables 
+		myserver.count = 0
+		myserver.users = {}
+		print("Server has Stopped")
+
 
 	def onRegister(self, socket, name):
 		# validate user name to one word only 
@@ -136,6 +157,7 @@ class myserver(Server):
 			socket.name = name
 			print("NEW USER", name)
 			myserver.send(self, f"Registered sucessfully, Welcome {name}!!", socket)
+			socket.registered = True
 
 	def send(self, message, socket):
 		message=message.encode()
