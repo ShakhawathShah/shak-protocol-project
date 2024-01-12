@@ -11,18 +11,20 @@ class myserver(Server):
 		print("Server has started")
 		
 	def onMessage(self, socket, message):
-
+		# Split input into command and parameter
 		(command, sep, parameter) = message.strip().partition(' ')
 		
 		if(command == "MESSAGEALL" and socket.registered == True):
 			print('Command is ', command)
 			print ('Parameter is ',parameter)
 			print("MESSAGING ALL USERS")
-
+			# Check for blank input
 			if(parameter.strip() == ""):
 				print("INVALID COMMAND")
 				myserver.send(self, "Blank message entered, please enter valid message", socket)
 			else:
+				# Loop through users and send message to each
+				# Exclude user whos sending message
 				parameter = f"\n{socket.name}: {parameter}"
 				message=parameter.encode()
 				for s in myserver.users.values():
@@ -34,12 +36,15 @@ class myserver(Server):
 			(user, sep, message) = parameter.strip().partition(' ')
 			if(message.strip() == ""):
 				print("INVALID COMMAND")
+				# Check for blank input
 				myserver.send(self, "Blank message entered, please enter valid message", socket)
 			else:
 				if (user == socket.name):
 					print("INVALID COMMAND")
 					myserver.send(self, "You cannot send a message to yourself", socket)
 				else:
+					# Check if user is in user dict
+					# if found send user message using socket
 					if(user in myserver.users.keys()):
 						print('SENDING MESSAGE TO: ', user)
 						print ('MESSAGE IS: ',message)
@@ -49,6 +54,7 @@ class myserver(Server):
 						user_socket.send(message)
 					else:
 						myserver.send(self, "User is not active, please try again or use <SEEALL> to see active users", socket)
+		# Run command if registered
 		elif(command == "ALLUSERS" and socket.registered == True):
 			print('Command is ', command)
 			print("DISPLAYING ALL USERS")
@@ -58,7 +64,7 @@ class myserver(Server):
 					name = f"{name} (ME)"
 				name=name.encode()
 				socket.send(name)
-
+		# Run command if registered
 		elif(command == "CHECK" and socket.registered == True):
 			print('Command is ', command)
 			if(parameter.strip() == ""):
@@ -68,6 +74,7 @@ class myserver(Server):
 				if (parameter == socket.name):
 					myserver.send(self, "You are an active user", socket)
 				else:
+					# Checks if active user is hidden before showing active users
 					if(parameter in myserver.users.keys() and (myserver.users.get(parameter)).hidden == False):
 						myserver.send(self, f"{parameter} is an active user", socket)
 					else:
@@ -75,6 +82,7 @@ class myserver(Server):
 
 		elif(command == "HIDE" and socket.registered == True):
 			print('Command is ', command)
+			# Swap value of hidden
 			if(socket.hidden == False):
 				socket.hidden = True
 			else:
@@ -83,6 +91,7 @@ class myserver(Server):
 		elif(command == "REGISTER"):
 			print('Command is ', command)
 			print ('Parameter is ',parameter)
+			# Validate for character length and blank username
 			if(parameter.strip() == ""):
 				print("INVALID COMMAND")
 				myserver.send(self, "Blank name entered, please enter valid name", socket)
@@ -93,6 +102,7 @@ class myserver(Server):
 				myserver.onRegister(self, socket, parameter)
 		elif(command == "HELP"):
 			print('Command is ', command)
+			# Display commands to user
 			myserver.send(self, "Command Details:"
 						+"\n'REGISTER'   -> Register new user" 
 						+"\n'MESSAGEALL' -> Send message to all active users on system"
@@ -105,6 +115,7 @@ class myserver(Server):
 						+"\n'QUIT'       -> Allows the user to quit and exit the program", socket)
 		elif(command == "HELPLIST"):
 			print('Command is ', command)
+			# Display commands format to user
 			myserver.send(self, "List of commands:"
 						+"\n'<REGISTER>'   '<username>'"
 						+"\n'<MESSAGEALL>' '<message>'"
@@ -129,6 +140,7 @@ class myserver(Server):
 		return True
 
 	def onConnect(self, socket):
+		# initialise socket attributes
 		socket.name = ""
 		socket.hidden = False
 		socket.registered = False
@@ -140,6 +152,7 @@ class myserver(Server):
 		return True
 
 	def onDisconnect(self, socket):
+		# Remove user from user dict
 		if socket.name in myserver.users:
 			myserver.users.pop(socket.name)
 		socket.close()
@@ -156,6 +169,7 @@ class myserver(Server):
 
 	def onRegister(self, socket, name):
 		# validate user name to one word only 
+		# validate user name already exists 
 		if (" " in name ):
 			myserver.send(self, "Name can only be one word please try again", socket)
 		elif(socket in myserver.users.values()):
@@ -177,7 +191,7 @@ class myserver(Server):
 ip = sys.argv[1]
 port = int(sys.argv[2])
 
-# Create an echo server.
+# Create a server.
 server = myserver()
 
 # Start server
